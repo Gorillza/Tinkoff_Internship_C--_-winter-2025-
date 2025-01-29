@@ -1,62 +1,68 @@
 #include <iostream>
 #include <vector>
-
 using namespace std;
 
-const int CONST_VALUE = 998244353;
+const long long MOD = 998244353;
 
-// Функция быстрого возведения в степень по модулю
-int PowerMod(int base, int exp, int mod) {
-    int result = 1;
-    while (exp > 0) {
-        if (exp % 2 == 1) {
-            result = (1LL * result * base) % mod;
+// Быстрое возведение в степень
+long long QuickPow(long long value, long long pow, long long mod) {
+    long long result = 1, temp = value;
+    while (pow != 0) {
+        if (pow % 2 == 1) {
+            result = (result * temp) % mod;
         }
-        base = (1LL * base * base) % mod;
-        exp /= 2;
+        temp = (temp * temp) % mod;
+        pow /= 2;
+    }
+    return result;
+}
+
+// Вычисление биномиальных коэффициентов C(p, m)
+vector<long long> Cnk(long long p) {
+    vector<long long> coefficients(p + 1, 0);
+    coefficients[0] = 1;
+    for (long long i = 1; i <= p; ++i) {
+        coefficients[i] = (coefficients[i - 1] * (p - i + 1) / i) % MOD;
+    }
+    return coefficients;
+}
+
+// Вычисление сумм S_m
+vector<long long> Sums(vector<long long> array, int k) {
+    vector<long long> temp = array; // Создаем копию массива
+    vector<long long> result(k + 1, 0);
+    result[0] = array.size();
+    for (int i = 1; i <= k; ++i) {
+        long long sum = 0;
+        for (size_t j = 0; j < array.size(); ++j) {
+            sum = (sum + array[j]) % MOD;
+            array[j] = (array[j] * temp[j]) % MOD; // Изменяем копию массива
+        }
+        result[i] = sum % MOD;
     }
     return result;
 }
 
 int main() {
-    ios::sync_with_stdio(false);
-    cin.tie(nullptr);
-    cout.tie(nullptr);
-
     int n, k;
     cin >> n >> k;
 
-    vector<int> array(n);
+    vector<long long> array(n);
     for (int i = 0; i < n; i++) {
         cin >> array[i];
     }
 
-    vector<int> results(k);
+    vector<long long> sums = Sums(array, k);
 
-    for (int p = 1; p <= k; p++) {
-        vector<int> sums;
-        sums.reserve(n * (n - 1) / 2);
+    for (int p = 1; p <= k; ++p) {
+        vector<long long> cnk = Cnk(p);
+        long long f = 0;
 
-        // Генерация всех парных сумм
-        for (int i = 0; i < n; i++) {
-            for (int j = i + 1; j < n; j++) {
-                sums.push_back(array[i] + array[j]);
-            }
+        for (int m = 0; m <= p; ++m) {
+            f = (f + cnk[m] * (sums[m] * sums[p - m] % MOD - sums[p]) / 2) % MOD;
         }
 
-        int totalSum = 0;
-
-        // Вычисление суммы возведенных в степень парных сумм
-        for (int v : sums) {
-            totalSum = (totalSum + PowerMod(v, p, CONST_VALUE)) % CONST_VALUE;
-        }
-
-        results[p - 1] = totalSum;
-    }
-
-    // Вывод результатов
-    for (int result : results) {
-        cout << result << '\n';
+        cout << f << endl;
     }
 
     return 0;
