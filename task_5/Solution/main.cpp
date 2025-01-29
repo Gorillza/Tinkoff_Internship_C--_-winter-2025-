@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
 
 int main() {
     int n;
@@ -12,21 +11,17 @@ int main() {
         std::cin >> a[i];
     }
 
-    // Построение префиксной суммы
-    std::vector<long long> prefixSum(n + 1, 0);
-    for (int i = 0; i < n; ++i) {
-        prefixSum[i + 1] = prefixSum[i] + a[i];
-    }
-
     long long totalSum = 0;
 
-    // Обработка всех подотрезков
+    // Перебираем все подотрезки
     for (int l = 0; l < n; ++l) {
         for (int r = l; r < n; ++r) {
-            // Вычисляем длину подотрезка [l, r] через префиксную сумму
-            long long segmentLength = prefixSum[r + 1] - prefixSum[l];
-            // Добавляем количество частей, необходимых для подотрезка
-            totalSum += (segmentLength + s - 1) / s; // Округление вверх
+            long long parts = 0;
+            // Считаем количество частей для всех сегментов в текущем подотрезке
+            for (int k = l; k <= r; ++k) {
+                parts += (a[k] + s - 1) / s; // Округление вверх
+            }
+            totalSum += parts; // Добавляем к общей сумме
         }
     }
 
