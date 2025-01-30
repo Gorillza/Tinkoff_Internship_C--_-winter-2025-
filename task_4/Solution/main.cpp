@@ -1,75 +1,147 @@
 #include <iostream>
 #include <vector>
-#include <tuple>
+#include <limits>
 #include <algorithm>
-#include <climits>
 
-// Структура для хранения остатка и индекса
-struct Remainder {
-    int value;
-    int index;
-};
+using namespace std;
+using ull = unsigned long long;
 
-// Функция для вычисления минимальных операций
-int calculate_min_operations(const std::vector<int>& arr, int n, int x, int y, int z) {
-    int min_operations = INT_MAX;
+// Функция для вычисления НОД
+ull GCD(ull a, ull b) {
+    while (b != 0) {
+        ull t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
 
-    // Вектора для остатков
-    std::vector<Remainder> remainders_x(n), remainders_y(n), remainders_z(n);
+// Функция для вычисления НОК
+ull LCM(ull a, ull b) {
+    return a * (b / GCD(a, b));
+}
 
-    // Вычисляем остатки для каждого делителя
-    for (int i = 0; i < n; ++i) {
-        remainders_x[i] = { (x - arr[i] % x) % x, i };
-        remainders_y[i] = { (y - arr[i] % y) % y, i };
-        remainders_z[i] = { (z - arr[i] % z) % z, i };
+int main() {
+    ios::sync_with_stdio(false);
+    cin.tie(nullptr);
+
+    int n;
+    ull x, y, z;
+    cin >> n >> x >> y >> z;
+
+    // Вычисляем все НОК
+    ull xy = LCM(x, y);
+    ull xz = LCM(x, z);
+    ull yz = LCM(y, z);
+    ull xyz = LCM(LCM(x, y), z);
+
+    // Векторы для хранения количества изменений
+    vector<ull> c_xyz(n, 0), c_xy(n, 0), c_xz(n, 0);
+    vector<ull> c_yz(n, 0), c_x(n, 0), c_y(n, 0), c_z(n, 0);
+
+    // Читаем входные данные и заполняем массивы изменений
+    for (int i = 0; i < n; i++) {
+        ull a;
+        cin >> a;
+        if (a % xyz != 0) c_xyz[i] = xyz - a % xyz;
+        if (a % xy != 0) c_xy[i] = xy - a % xy;
+        if (a % xz != 0) c_xz[i] = xz - a % xz;
+        if (a % yz != 0) c_yz[i] = yz - a % yz;
+        if (a % x != 0) c_x[i] = x - a % x;
+        if (a % y != 0) c_y[i] = y - a % y;
+        if (a % z != 0) c_z[i] = z - a % z;
     }
 
-    // Сортируем остатки для каждого делителя
-    auto sort_by_value = [](const Remainder& a, const Remainder& b) {
-        return a.value < b.value;
-    };
-    std::sort(remainders_x.begin(), remainders_x.end(), sort_by_value);
-    std::sort(remainders_y.begin(), remainders_y.end(), sort_by_value);
-    std::sort(remainders_z.begin(), remainders_z.end(), sort_by_value);
+    // Инициализируем минимальное значение преобразования
+    ull best = *min_element(c_xyz.begin(), c_xyz.end());
 
-    // Перебираем все возможные комбинации
-    for (const auto& rem_x : remainders_x) {
-        for (const auto& rem_y : remainders_y) {
-            for (const auto& rem_z : remainders_z) {
-                // Если все три остатка относятся к одному числу
-                if (rem_x.index == rem_y.index && rem_y.index == rem_z.index) {
-                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
-                }
-                // Если два числа совпадают
-                else if (rem_x.index == rem_y.index) {
-                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
-                } else if (rem_y.index == rem_z.index) {
-                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
-                } else if (rem_x.index == rem_z.index) {
-                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
-                }
-                // Если все числа разные
-                else {
-                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
-                }
+    // Если n == 1, сразу выводим результат
+    if (n == 1) {
+        cout << best << "\n";
+        return 0;
+    }
+
+    // Создаем массивы для двухкратных и однократных делений
+    vector<vector<ull>> c_p_vars = {c_xy, c_xz, c_yz};
+    vector<vector<ull>> c_t_vars = {c_z, c_y, c_x};
+
+    // Проверяем комбинации двух чисел (одно кратно двум, другое — одному)
+    for (int i = 0; i < 3; i++) {
+        vector<ull>& c_p = c_p_vars[i];
+        vector<ull>& c_t = c_t_vars[i];
+
+        pair<int, int> best_p = {-1, -1};
+        pair<int, int> best_t = {-1, -1};
+
+        // Поиск двух наименьших значений
+        for (int j = 0; j < n; j++) {
+            if (best_p.first == -1 || c_p[j] <= c_p[best_p.first]) {
+                best_p.second = best_p.first;
+                best_p.first = j;
+            } else if (best_p.second == -1 || c_p[j] <= c_p[best_p.second]) {
+                best_p.second = j;
+            }
+
+            if (best_t.first == -1 || c_t[j] <= c_t[best_t.first]) {
+                best_t.second = best_t.first;
+                best_t.first = j;
+            } else if (best_t.second == -1 || c_t[j] <= c_t[best_t.second]) {
+                best_t.second = j;
+            }
+        }
+
+        // Проверяем комбинации из двух чисел
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+                if (best_p.first == best_t.second) continue;
+                ull c = c_p[best_p.first] + c_t[best_t.second];
+                best = min(best, c);
             }
         }
     }
 
-    return min_operations;
-}
-
-int main() {
-    int n, x, y, z;
-    std::cin >> n >> x >> y >> z;
-
-    std::vector<int> arr(n);
-    for (int i = 0; i < n; ++i) {
-        std::cin >> arr[i];
+    // Если n == 2, сразу выводим результат
+    if (n == 2) {
+        cout << best << "\n";
+        return 0;
     }
 
-    int result = calculate_min_operations(arr, n, x, y, z);
-    std::cout << result << std::endl;
+    // Поиск трех различных минимальных значений
+    vector<vector<int>> best_t(3, vector<int>(3, -1));
 
+    for (int i = 0; i < 3; i++) {
+        vector<ull>& c_t = c_t_vars[i];
+
+        for (int j = 0; j < n; j++) {
+            if (best_t[i][0] == -1 || c_t[j] <= c_t[best_t[i][0]]) {
+                best_t[i][2] = best_t[i][1];
+                best_t[i][1] = best_t[i][0];
+                best_t[i][0] = j;
+            } else if (best_t[i][1] == -1 || c_t[j] <= c_t[best_t[i][1]]) {
+                best_t[i][2] = best_t[i][1];
+                best_t[i][1] = j;
+            } else if (best_t[i][2] == -1 || c_t[j] <= c_t[best_t[i][2]]) {
+                best_t[i][2] = j;
+            }
+        }
+    }
+
+    // Проверяем все возможные комбинации из трех разных индексов
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                int i_z = best_t[0][i];
+                int i_y = best_t[1][j];
+                int i_x = best_t[2][k];
+
+                if (i_x == i_y || i_x == i_z || i_y == i_z) continue;
+
+                ull c = c_x[i_x] + c_y[i_y] + c_z[i_z];
+                best = min(best, c);
+            }
+        }
+    }
+
+    cout << best << "\n";
     return 0;
 }
