@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include <cmath>
 #include <algorithm>
 
 int main() {
@@ -12,32 +11,29 @@ int main() {
         std::cin >> budget[i];
     }
 
-    // Минимальная стоимость букета из 3 цветов: 2^0 + 2^1 + 2^2 = 7
-    const long long min_cost = 7;
+    // Предвычисляем все возможные суммы
+    std::vector<long long> combinations;
+    for (int i = 0; i <= 60; ++i) {
+        for (int j = i + 1; j <= 60; ++j) {
+            for (int k = j + 1; k <= 60; ++k) {
+                long long sum = (1LL << i) + (1LL << j) + (1LL << k);
+                combinations.push_back(sum);
+            }
+        }
+    }
 
+    // Сортируем комбинации для быстрого поиска
+    std::sort(combinations.begin(), combinations.end());
+
+    // Для каждого бюджета ищем максимально подходящую сумму
     for (long long i = 0; i < n; ++i) {
-        if (budget[i] < min_cost) {
-            std::cout << -1 << std::endl; // Невозможно купить букет
+        auto it = std::upper_bound(combinations.begin(), combinations.end(), budget[i]);
+        if (it == combinations.begin()) {
+            // Если нет подходящих комбинаций
+            std::cout << -1 << std::endl;
         } else {
-            // Находим три самых дорогих цветка, которые можно купить
-            long long remaining_budget = budget[i];
-            std::vector<long long> selected_flowers;
-
-            for (long long power = 60; power >= 0 && selected_flowers.size() < 3; --power) {
-                long long cost = 1LL << power; // Стоимость цветка
-                if (remaining_budget >= cost) {
-                    selected_flowers.push_back(cost);
-                    remaining_budget -= cost;
-                }
-            }
-
-            // Если удалось выбрать ровно три цветка, то выводим их стоимость
-            if (selected_flowers.size() == 3) {
-                long long total_cost = selected_flowers[0] + selected_flowers[1] + selected_flowers[2];
-                std::cout << total_cost << std::endl;
-            } else {
-                std::cout << -1 << std::endl; // Не удалось выбрать три цветка
-            }
+            // Возвращаем максимально допустимую сумму
+            std::cout << *(--it) << std::endl;
         }
     }
 
