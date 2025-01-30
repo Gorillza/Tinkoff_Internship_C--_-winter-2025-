@@ -3,34 +3,33 @@
 using namespace std;
 
 int main() {
-    int n;
-    long long s;
-    cin >> n >> s;
+    int arraySize, maxSegmentSum;
+    cin >> arraySize >> maxSegmentSum;
 
-    vector<long long> a(n);
-    for (int i = 0; i < n; ++i) {
-        cin >> a[i];
+    vector<int> array(arraySize);
+    for (int i = 0; i < arraySize; i++) {
+        cin >> array[i];
     }
 
-    // Префиксные суммы
-    vector<long long> prefixSum(n + 1, 0);
-    for (int i = 0; i < n; ++i) {
-        prefixSum[i + 1] = prefixSum[i] + a[i];
+    vector<int> maxEndIndex(arraySize);
+    for (int startIndex = 0, endIndex = 0, currentSum = array[0]; startIndex < arraySize; startIndex++) {
+        while (endIndex + 1 < arraySize && currentSum + array[endIndex + 1] <= maxSegmentSum) {
+            currentSum += array[++endIndex];
+        }
+        maxEndIndex[startIndex] = endIndex;
+        currentSum -= array[startIndex];
     }
 
-    long long totalSum = 0;
-
-    // Подсчёт всех подотрезков
-    for (int l = 0; l < n; ++l) {
-        for (int r = l; r < n; ++r) {
-            // Сумма подотрезка [l, r]
-            long long segmentSum = prefixSum[r + 1] - prefixSum[l];
-            // Количество частей для подотрезка
-            totalSum += (segmentSum + s - 1) / s; // Округление вверх
+    int totalWeightedSum = 0;
+    for (int segmentStart = 0; segmentStart < arraySize; segmentStart++) {
+        int segmentWeight = 1, currentStart = segmentStart;
+        while (currentStart < arraySize) {
+            totalWeightedSum += segmentWeight * (maxEndIndex[currentStart] - currentStart + 1);
+            currentStart = maxEndIndex[currentStart] + 1;
+            segmentWeight++;
         }
     }
 
-    cout << totalSum << endl;
-
+    cout << totalWeightedSum << endl;
     return 0;
 }
