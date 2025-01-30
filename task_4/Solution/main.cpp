@@ -1,46 +1,62 @@
 #include <iostream>
 #include <vector>
+#include <tuple>
 #include <algorithm>
 #include <climits>
 
+// Структура для хранения остатка и индекса
+struct Remainder {
+    int value;
+    int index;
+};
+
+// Функция для вычисления минимальных операций
 int calculate_min_operations(const std::vector<int>& arr, int n, int x, int y, int z) {
-    int min_ops_x = INT_MAX, min_ops_y = INT_MAX, min_ops_z = INT_MAX;
-    int index_x = -1, index_y = -1, index_z = -1;
+    int min_operations = INT_MAX;
 
-    // Проходим по массиву и вычисляем минимальные операции для x, y, z
+    // Вектора для остатков
+    std::vector<Remainder> remainders_x(n), remainders_y(n), remainders_z(n);
+
+    // Вычисляем остатки для каждого делителя
     for (int i = 0; i < n; ++i) {
-        int remainder_x = (x - arr[i] % x) % x;
-        int remainder_y = (y - arr[i] % y) % y;
-        int remainder_z = (z - arr[i] % z) % z;
+        remainders_x[i] = { (x - arr[i] % x) % x, i };
+        remainders_y[i] = { (y - arr[i] % y) % y, i };
+        remainders_z[i] = { (z - arr[i] % z) % z, i };
+    }
 
-        // Обновляем минимальные значения
-        if (remainder_x < min_ops_x) {
-            min_ops_x = remainder_x;
-            index_x = i;
-        }
-        if (remainder_y < min_ops_y) {
-            min_ops_y = remainder_y;
-            index_y = i;
-        }
-        if (remainder_z < min_ops_z) {
-            min_ops_z = remainder_z;
-            index_z = i;
+    // Сортируем остатки для каждого делителя
+    auto sort_by_value = [](const Remainder& a, const Remainder& b) {
+        return a.value < b.value;
+    };
+    std::sort(remainders_x.begin(), remainders_x.end(), sort_by_value);
+    std::sort(remainders_y.begin(), remainders_y.end(), sort_by_value);
+    std::sort(remainders_z.begin(), remainders_z.end(), sort_by_value);
+
+    // Перебираем все возможные комбинации
+    for (const auto& rem_x : remainders_x) {
+        for (const auto& rem_y : remainders_y) {
+            for (const auto& rem_z : remainders_z) {
+                // Если все три остатка относятся к одному числу
+                if (rem_x.index == rem_y.index && rem_y.index == rem_z.index) {
+                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
+                }
+                // Если два числа совпадают
+                else if (rem_x.index == rem_y.index) {
+                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
+                } else if (rem_y.index == rem_z.index) {
+                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
+                } else if (rem_x.index == rem_z.index) {
+                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
+                }
+                // Если все числа разные
+                else {
+                    min_operations = std::min(min_operations, rem_x.value + rem_y.value + rem_z.value);
+                }
+            }
         }
     }
 
-    // Вычисляем минимальные операции с учетом пересечений
-    int total_ops = min_ops_x + min_ops_y + min_ops_z;
-    if (index_x == index_y && index_y == index_z) {
-        total_ops = std::max({min_ops_x, min_ops_y, min_ops_z});
-    } else if (index_x == index_y) {
-        total_ops = std::max(min_ops_x, min_ops_y) + min_ops_z;
-    } else if (index_x == index_z) {
-        total_ops = std::max(min_ops_x, min_ops_z) + min_ops_y;
-    } else if (index_y == index_z) {
-        total_ops = std::max(min_ops_y, min_ops_z) + min_ops_x;
-    }
-
-    return total_ops;
+    return min_operations;
 }
 
 int main() {

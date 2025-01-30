@@ -1,31 +1,36 @@
 #include <iostream>
 #include <vector>
+using namespace std;
 
 int main() {
     int n;
     long long s;
-    std::cin >> n >> s;
+    cin >> n >> s;
 
-    std::vector<long long> a(n);
+    vector<long long> a(n);
     for (int i = 0; i < n; ++i) {
-        std::cin >> a[i];
+        cin >> a[i];
+    }
+
+    // Префиксные суммы
+    vector<long long> prefixSum(n + 1, 0);
+    for (int i = 0; i < n; ++i) {
+        prefixSum[i + 1] = prefixSum[i] + a[i];
     }
 
     long long totalSum = 0;
 
-    // Перебираем все подотрезки
+    // Подсчёт всех подотрезков
     for (int l = 0; l < n; ++l) {
         for (int r = l; r < n; ++r) {
-            long long parts = 0;
-            // Считаем количество частей для всех сегментов в текущем подотрезке
-            for (int k = l; k <= r; ++k) {
-                parts += (a[k] + s - 1) / s; // Округление вверх
-            }
-            totalSum += parts; // Добавляем к общей сумме
+            // Сумма подотрезка [l, r]
+            long long segmentSum = prefixSum[r + 1] - prefixSum[l];
+            // Количество частей для подотрезка
+            totalSum += (segmentSum + s - 1) / s; // Округление вверх
         }
     }
 
-    std::cout << totalSum << std::endl;
+    cout << totalSum << endl;
 
     return 0;
 }
